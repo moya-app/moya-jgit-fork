@@ -71,15 +71,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -777,10 +769,15 @@ public class TransportHttp extends HttpTransport implements WalkTransport,
 		protected void doFetch(final ProgressMonitor monitor,
 				final Collection<Ref> want, final Set<ObjectId> have,
 				final OutputStream outputStream) throws TransportException {
+			Set<FetchOption> options = new HashSet<FetchOption>();
+			if(transport.getFetchDepth() > 0){
+				options.add(new FetchOption(FetchOption.FetchOptionParam.DEPTH,
+						transport.getFetchDepth()));
+			}
 			try {
 				svc = new MultiRequestService(SVC_UPLOAD_PACK);
 				init(svc.getInputStream(), svc.getOutputStream());
-				super.doFetch(monitor, want, have, outputStream);
+				super.doFetch(monitor, want, have, outputStream, options);
 			} finally {
 				svc = null;
 			}

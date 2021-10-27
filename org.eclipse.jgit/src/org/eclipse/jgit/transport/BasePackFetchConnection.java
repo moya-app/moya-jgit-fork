@@ -361,7 +361,8 @@ public abstract class BasePackFetchConnection extends BasePackConnection
      */
     protected void doFetch(final ProgressMonitor monitor,
                            final Collection<Ref> want, final Set<ObjectId> have,
-                           OutputStream outputStream) throws TransportException {
+                           OutputStream outputStream,
+                           Set<FetchOption> options) throws TransportException {
         try {
             noProgress = monitor == NullProgressMonitor.INSTANCE;
 
@@ -373,7 +374,7 @@ public abstract class BasePackFetchConnection extends BasePackConnection
                 pckState = new PacketLineOut(state);
             }
 
-            if (sendWants(want)) {
+            if (sendWants(want, options)) {
                 negotiate(monitor);
 
                 walk.dispose();
@@ -393,6 +394,12 @@ public abstract class BasePackFetchConnection extends BasePackConnection
             close();
             throw new TransportException(err.getMessage(), err);
         }
+    }
+
+    protected void doFetch(final ProgressMonitor monitor,
+                           final Collection<Ref> want, final Set<ObjectId> have,
+                           OutputStream outputStream) throws TransportException {
+        doFetch(monitor, want, have,outputStream,null);
     }
 
     @Override
@@ -474,7 +481,8 @@ public abstract class BasePackFetchConnection extends BasePackConnection
         }
     }
 
-    private boolean sendWants(final Collection<Ref> want) throws IOException {
+    private boolean sendWants(final Collection<Ref> want,
+                              Set<FetchOption> options) throws IOException {
         final PacketLineOut p = statelessRPC ? pckState : pckOut;
         boolean first = true;
         for (final Ref r : want) {
@@ -500,12 +508,23 @@ public abstract class BasePackFetchConnection extends BasePackConnection
             line.append('\n');
             p.writeString(line.toString());
         }
-        p.writeString("deepen 1\n"); //TODO
+        writeExtraOptions(p,options);
         if (first)
             return false;
         p.end();
         outNeedsEnd = false;
         return true;
+    }
+
+    private void writeExtraOptions(PacketLineOut p, Set<FetchOption> options) throws IOException {
+        if(options == null){
+            return;
+        }
+        for(FetchOption option:options){
+            if(option.getParam().equals(FetchOption.FetchOptionParam.DEPTH)){
+                p.writeString("deepen "+option.getValue().toString()+"\n");
+            }
+        }
     }
 
     private void writeShallowCommitLines() throws IOException {
