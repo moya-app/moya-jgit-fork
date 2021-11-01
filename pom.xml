@@ -168,7 +168,8 @@
   <properties>
     <jgit-url>http://www.eclipse.org/jgit/</jgit-url>
     <jgit-copyright>Copyright (c) 2005, 2009 Shawn Pearce, Robin Rosenberg, et.al.</jgit-copyright>
-    <jgit.website.url>scp://build.eclipse.org/home/data/httpd/download.eclipse.org/jgit/site/${project.version}/</jgit.website.url>
+    <jgit.website.url>scp://build.eclipse.org/home/data/httpd/download.eclipse.org/jgit/site/${project.version}/
+    </jgit.website.url>
 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -197,6 +198,8 @@
     <sonar.core.codeCoveragePlugin>jacoco</sonar.core.codeCoveragePlugin>
     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
     <sonar.jacoco.reportPath>../target/jacoco.exec</sonar.jacoco.reportPath>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
   </properties>
 
   <repositories>
@@ -378,8 +381,8 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.6</source>
+          <target>1.6</target>
           <encoding>UTF-8</encoding>
         </configuration>
       </plugin>

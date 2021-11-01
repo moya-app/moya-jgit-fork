@@ -67,132 +67,167 @@ import org.eclipse.jgit.util.RawParseUtils;
  * against the underlying InputStream.
  */
 public class PacketLineIn {
-	/** Magic return from {@link #readString()} when a flush packet is found. */
-	public static final String END = new StringBuilder(0).toString(); 	/* must not string pool */
+    /**
+     * Magic return from {@link #readString()} when a flush packet is found.
+     */
+    public static final String END = new StringBuilder(0).toString();    /* must not string pool */
 
-	static enum AckNackResult {
-		/** NAK */
-		NAK,
-		/** ACK */
-		ACK,
-		/** ACK + continue */
-		ACK_CONTINUE,
-		/** ACK + common */
-		ACK_COMMON,
-		/** ACK + ready */
-		ACK_READY;
-	}
+    static enum AckNackResult {
+        /**
+         * NAK
+         */
+        NAK,
+        /**
+         * ACK
+         */
+        ACK,
+        /**
+         * ACK + continue
+         */
+        ACK_CONTINUE,
+        /**
+         * ACK + common
+         */
+        ACK_COMMON,
+        /**
+         * ACK + ready
+         */
+        ACK_READY,
+        /**
+         * SHALLOW
+         */
+        SHALLOW
+    }
 
-	private final InputStream in;
+    private final InputStream in;
 
-	private final byte[] lineBuffer;
+    private final byte[] lineBuffer;
 
-	/**
-	 * Create a new packet line reader.
-	 *
-	 * @param i
-	 *            the input stream to consume.
-	 */
-	public PacketLineIn(final InputStream i) {
-		in = i;
-		lineBuffer = new byte[SideBandOutputStream.SMALL_BUF];
-	}
+    private String lineRead;
 
-	AckNackResult readACK(final MutableObjectId returnedId) throws IOException {
-		final String line = readString();
-		if (line.length() == 0)
-			throw new PackProtocolException(JGitText.get().expectedACKNAKFoundEOF);
-		if ("NAK".equals(line)) //$NON-NLS-1$
-			return AckNackResult.NAK;
-		if (line.startsWith("ACK ")) { //$NON-NLS-1$
-			returnedId.fromString(line.substring(4, 44));
-			if (line.length() == 44)
-				return AckNackResult.ACK;
+    /**
+     * Create a new packet line reader.
+     *
+     * @param i the input stream to consume.
+     */
+    public PacketLineIn(final InputStream i) {
+        in = i;
+        lineBuffer = new byte[SideBandOutputStream.SMALL_BUF];
+    }
 
-			final String arg = line.substring(44);
-			if (arg.equals(" continue")) //$NON-NLS-1$
-				return AckNackResult.ACK_CONTINUE;
-			else if (arg.equals(" common")) //$NON-NLS-1$
-				return AckNackResult.ACK_COMMON;
-			else if (arg.equals(" ready")) //$NON-NLS-1$
-				return AckNackResult.ACK_READY;
-		}
-		if (line.startsWith("ERR ")) //$NON-NLS-1$
-			throw new PackProtocolException(line.substring(4));
-		throw new PackProtocolException(MessageFormat.format(JGitText.get().expectedACKNAKGot, line));
-	}
+    AckNackResult readACK(final MutableObjectId returnedId) throws IOException {
+        final String line = readStringForEOF();
+        lineRead = line;
+        if ("NAK".equals(line)) //$NON-NLS-1$
+            return AckNackResult.NAK;
+        if (line.startsWith("shallow")) {
+            return AckNackResult.SHALLOW;
+        }
+        if (line.startsWith("ACK ")) { //$NON-NLS-1$
+            returnedId.fromString(line.substring(4, 44));
+            if (line.length() == 44)
+                return AckNackResult.ACK;
 
-	/**
-	 * Read a single UTF-8 encoded string packet from the input stream.
-	 * <p>
-	 * If the string ends with an LF, it will be removed before returning the
-	 * value to the caller. If this automatic trimming behavior is not desired,
-	 * use {@link #readStringRaw()} instead.
-	 *
-	 * @return the string. {@link #END} if the string was the magic flush
-	 *         packet.
-	 * @throws IOException
-	 *             the stream cannot be read.
-	 */
-	public String readString() throws IOException {
-		int len = readLength();
-		if (len == 0)
-			return END;
+            final String arg = line.substring(44);
+            if (arg.equals(" continue")) //$NON-NLS-1$
+                return AckNackResult.ACK_CONTINUE;
+            else if (arg.equals(" common")) //$NON-NLS-1$
+                return AckNackResult.ACK_COMMON;
+            else if (arg.equals(" ready")) //$NON-NLS-1$
+                return AckNackResult.ACK_READY;
+        }
+        if (line.startsWith("ERR ")) //$NON-NLS-1$
+            throw new PackProtocolException(line.substring(4));
+        throw new PackProtocolException(MessageFormat.format(JGitText.get().expectedACKNAKGot, line));
+    }
 
-		len -= 4; // length header (4 bytes)
-		if (len == 0)
-			return ""; //$NON-NLS-1$
+    private String readStringForEOF() throws IOException {
+        // Allow multiple checks for EOF before killing the process since the server
+        // sometimes sends empty responses between actual data
+        int count = 0;
+        while (count < 5){
+            String line = readString();
+            if(line.length() > 0){
+                return line;
+            }
+            count++;
+        }
+        throw new PackProtocolException(JGitText.get().expectedACKNAKFoundEOF);
+    }
 
-		byte[] raw;
-		if (len <= lineBuffer.length)
-			raw = lineBuffer;
-		else
-			raw = new byte[len];
+    /**
+     * Read a single UTF-8 encoded string packet from the input stream.
+     * <p>
+     * If the string ends with an LF, it will be removed before returning the
+     * value to the caller. If this automatic trimming behavior is not desired,
+     * use {@link #readStringRaw()} instead.
+     *
+     * @return the string. {@link #END} if the string was the magic flush
+     * packet.
+     * @throws IOException the stream cannot be read.
+     */
+    public String readString() throws IOException {
+        int len = readLength();
+        if (len == 0)
+            return END;
 
-		IO.readFully(in, raw, 0, len);
-		if (raw[len - 1] == '\n')
-			len--;
-		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
-	}
+        len -= 4; // length header (4 bytes)
+        if (len == 0)
+            return ""; //$NON-NLS-1$
 
-	/**
-	 * Read a single UTF-8 encoded string packet from the input stream.
-	 * <p>
-	 * Unlike {@link #readString()} a trailing LF will be retained.
-	 *
-	 * @return the string. {@link #END} if the string was the magic flush
-	 *         packet.
-	 * @throws IOException
-	 *             the stream cannot be read.
-	 */
-	public String readStringRaw() throws IOException {
-		int len = readLength();
-		if (len == 0)
-			return END;
+        byte[] raw;
+        if (len <= lineBuffer.length)
+            raw = lineBuffer;
+        else
+            raw = new byte[len];
 
-		len -= 4; // length header (4 bytes)
+        IO.readFully(in, raw, 0, len);
+        if (raw[len - 1] == '\n')
+            len--;
+        return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
+    }
 
-		byte[] raw;
-		if (len <= lineBuffer.length)
-			raw = lineBuffer;
-		else
-			raw = new byte[len];
+    /**
+     * Read a single UTF-8 encoded string packet from the input stream.
+     * <p>
+     * Unlike {@link #readString()} a trailing LF will be retained.
+     *
+     * @return the string. {@link #END} if the string was the magic flush
+     * packet.
+     * @throws IOException the stream cannot be read.
+     */
+    public String readStringRaw() throws IOException {
+        int len = readLength();
+        if (len == 0)
+            return END;
 
-		IO.readFully(in, raw, 0, len);
-		return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
-	}
+        len -= 4; // length header (4 bytes)
 
-	int readLength() throws IOException {
-		IO.readFully(in, lineBuffer, 0, 4);
-		try {
-			final int len = RawParseUtils.parseHexInt16(lineBuffer, 0);
-			if (len != 0 && len < 4)
-				throw new ArrayIndexOutOfBoundsException();
-			return len;
-		} catch (ArrayIndexOutOfBoundsException err) {
-			throw new IOException(MessageFormat.format(JGitText.get().invalidPacketLineHeader,
-					"" + (char) lineBuffer[0] + (char) lineBuffer[1] //$NON-NLS-1$
-					+ (char) lineBuffer[2] + (char) lineBuffer[3]));
-		}
-	}
+        byte[] raw;
+        if (len <= lineBuffer.length)
+            raw = lineBuffer;
+        else
+            raw = new byte[len];
+
+        IO.readFully(in, raw, 0, len);
+        return RawParseUtils.decode(Constants.CHARSET, raw, 0, len);
+    }
+
+    int readLength() throws IOException {
+        IO.readFully(in, lineBuffer, 0, 4);
+        try {
+            final int len = RawParseUtils.parseHexInt16(lineBuffer, 0);
+            if (len != 0 && len < 4)
+                throw new ArrayIndexOutOfBoundsException();
+            return len;
+        } catch (ArrayIndexOutOfBoundsException err) {
+            throw new IOException(MessageFormat.format(JGitText.get().invalidPacketLineHeader,
+                    "" + (char) lineBuffer[0] + (char) lineBuffer[1] //$NON-NLS-1$
+                            + (char) lineBuffer[2] + (char) lineBuffer[3]));
+        }
+    }
+
+    public String getLineRead(){
+        return this.lineRead;
+    }
 }

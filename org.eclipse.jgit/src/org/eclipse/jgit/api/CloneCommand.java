@@ -102,6 +102,8 @@ public class CloneCommand extends TransportCommand<CloneCommand, Git> {
 
 	private boolean noCheckout;
 
+	private int depth;
+
 	private Collection<String> branchesToClone;
 
 	/**
@@ -130,7 +132,7 @@ public class CloneCommand extends TransportCommand<CloneCommand, Git> {
 		try {
 			URIish u = new URIish(uri);
 			Repository repository = init(u);
-			FetchResult result = fetch(repository, u);
+			FetchResult result = fetch(repository, u, depth);
 			if (!noCheckout)
 				checkout(repository, result);
 			return new Git(repository);
@@ -161,7 +163,7 @@ public class CloneCommand extends TransportCommand<CloneCommand, Git> {
 		return command.call().getRepository();
 	}
 
-	private FetchResult fetch(Repository clonedRepo, URIish u)
+	private FetchResult fetch(Repository clonedRepo, URIish u, int depth)
 			throws URISyntaxException,
 			org.eclipse.jgit.api.errors.TransportException, IOException,
 			GitAPIException {
@@ -182,6 +184,7 @@ public class CloneCommand extends TransportCommand<CloneCommand, Git> {
 
 		// run the fetch command
 		FetchCommand command = new FetchCommand(clonedRepo);
+		command.setDepth(depth);
 		command.setRemote(remote);
 		command.setProgressMonitor(monitor);
 		command.setTagOpt(TagOpt.FETCH_TAGS);
@@ -480,6 +483,16 @@ public class CloneCommand extends TransportCommand<CloneCommand, Git> {
 	 */
 	public CloneCommand setNoCheckout(boolean noCheckout) {
 		this.noCheckout = noCheckout;
+		return this;
+	}
+
+	/**
+	 * @param depth
+	 *            if set, a shallow clone will be done.
+	 * @return {@code this}
+	 */
+	public CloneCommand setDepth(int depth){
+		this.depth = depth;
 		return this;
 	}
 

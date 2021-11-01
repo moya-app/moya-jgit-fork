@@ -91,6 +91,8 @@ public class FetchCommand extends TransportCommand<FetchCommand, FetchResult> {
 
 	private TagOpt tagOption;
 
+	private int depth;
+
 	/**
 	 * @param repo
 	 */
@@ -125,6 +127,7 @@ public class FetchCommand extends TransportCommand<FetchCommand, FetchResult> {
 				if (tagOption != null)
 					transport.setTagOpt(tagOption);
 				transport.setFetchThin(thin);
+				transport.setFetchDepth(depth);
 				configure(transport);
 
 				FetchResult result = transport.fetch(monitor, refSpecs);
@@ -331,6 +334,16 @@ public class FetchCommand extends TransportCommand<FetchCommand, FetchResult> {
 	public FetchCommand setTagOpt(TagOpt tagOpt) {
 		checkCallable();
 		this.tagOption = tagOpt;
+		return this;
+	}
+
+	/**
+	 * @param depth
+	 *            if set, a shallow clone will be done.
+	 * @return {@code this}
+	 */
+	public FetchCommand setDepth(int depth){
+		this.depth = depth;
 		return this;
 	}
 }

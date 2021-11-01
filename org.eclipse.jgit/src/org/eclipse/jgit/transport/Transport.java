@@ -734,6 +734,9 @@ public abstract class Transport {
 	/** Should fetch request thin-pack if remote repository can produce it. */
 	private boolean fetchThin = DEFAULT_FETCH_THIN;
 
+	/** Should do a shallow fetch with depth. */
+	private int fetchDepth = 0;
+
 	/** Name of the receive pack program, if it must be executed. */
 	private String optionReceivePack = RemoteConfig.DEFAULT_RECEIVE_PACK;
 
@@ -866,6 +869,20 @@ public abstract class Transport {
 	 */
 	public void setFetchThin(final boolean fetchThin) {
 		this.fetchThin = fetchThin;
+	}
+
+	/**
+	 * Do a shallow fetch with depth
+	 *
+	 * @param fetchDepth
+	 *            shallow fetch
+	 */
+	public void setFetchDepth(final int fetchDepth) {
+		this.fetchDepth = fetchDepth;
+	}
+
+	public int getFetchDepth() {
+		return this.fetchDepth;
 	}
 
 	/**

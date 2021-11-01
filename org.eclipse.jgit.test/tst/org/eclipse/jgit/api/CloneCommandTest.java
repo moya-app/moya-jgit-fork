@@ -138,6 +138,25 @@ public class CloneCommandTest extends RepositoryTestCase {
 	}
 
 	@Test
+	public void testCloneShallowRepository() throws IOException,
+			JGitInternalException, GitAPIException, URISyntaxException {
+		File directory = createTempDirectory("testCloneRepository");
+		CloneCommand command = Git.cloneRepository();
+		command.setDirectory(directory);
+		command.setURI(fileUri());
+		command.setDepth(1);
+		Git git2 = command.call();
+		addRepoToClose(git2.getRepository());
+		assertNotNull(git2);
+		Iterable<RevCommit> commits = git2.log().call();
+		int count = 0;
+		for( RevCommit c : commits ) {
+			count++;
+		}
+		assertEquals(1, count);
+	}
+
+	@Test
 	public void testCloneRepositoryExplicitGitDir() throws IOException,
 			JGitInternalException, GitAPIException {
 		File directory = createTempDirectory("testCloneRepository");
