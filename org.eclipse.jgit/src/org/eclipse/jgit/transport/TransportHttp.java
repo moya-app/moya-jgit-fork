@@ -456,6 +456,9 @@ public class TransportHttp extends HttpTransport implements WalkTransport,
 
 		try {
 			int authAttempts = 1;
+			authMethod = HttpAuthMethod.Type.BASIC.method("");
+			authMethod.authorize(uri, getCredentialsProvider());
+
 			for (;;) {
 				final HttpConnection conn = httpOpen(u);
 				if (useSmartHttp) {
@@ -489,8 +492,7 @@ public class TransportHttp extends HttpTransport implements WalkTransport,
 					if (credentialsProvider == null)
 						throw new TransportException(uri,
 								JGitText.get().noCredentialsProvider);
-					if (authAttempts > 1)
-						credentialsProvider.reset(uri);
+					credentialsProvider.reset(uri);
 					if (3 < authAttempts
 							|| !authMethod.authorize(uri, credentialsProvider)) {
 						throw new TransportException(uri,
