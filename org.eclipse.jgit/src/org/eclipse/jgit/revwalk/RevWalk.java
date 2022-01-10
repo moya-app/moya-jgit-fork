@@ -226,6 +226,14 @@ public class RevWalk implements Iterable<RevCommit> {
 		filter = RevFilter.ALL;
 		treeFilter = TreeFilter.ALL;
 		retainBody = true;
+
+
+		// Remove all parents from shallow commits
+		try {
+			initializeShallowCommits();
+		} catch (IOException e) {
+			throw new RevWalkException(e);
+		}
 	}
 
 	/** @return the reader this walker is using to load objects. */
