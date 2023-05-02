@@ -51,7 +51,7 @@
   <groupId>org.eclipse.jgit</groupId>
   <artifactId>org.eclipse.jgit-parent</artifactId>
   <packaging>pom</packaging>
-  <version>3.7.1.201504261725-r</version>
+  <version>3.7.1.202305021725-r</version>
 
   <name>JGit - Parent</name>
   <url>${jgit-url}</url>
@@ -381,8 +381,8 @@
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>7</source>
+          <target>7</target>
           <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
