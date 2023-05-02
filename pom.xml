@@ -571,21 +571,10 @@
 
   <distributionManagement>
     <repository>
-      <id>repo.eclipse.org</id>
-      <name>JGit Maven Repository - Releases</name>
-      <url>https://repo.eclipse.org/content/repositories/jgit-releases/</url>
+      <id>github</id>
+      <name>GitHub Binuadmin Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/binuadmin/moya-jgit-fork</url>
     </repository>
-    <snapshotRepository>
-      <id>repo.eclipse.org</id>
-      <name>JGit Maven Repository - Snapshots</name>
-      <url>https://repo.eclipse.org/content/repositories/jgit-snapshots/</url>
-      <uniqueVersion>true</uniqueVersion>
-    </snapshotRepository>
-    <site>
-      <id>jgit.website</id>
-      <name>JGit Website</name>
-      <url>${jgit.website.url}</url>
-    </site>
   </distributionManagement>
 
   <profiles>
