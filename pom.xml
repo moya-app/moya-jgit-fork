@@ -572,8 +572,8 @@
   <distributionManagement>
     <repository>
       <id>github</id>
-      <name>GitHub Binuadmin Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/binuadmin/moya-jgit-fork</url>
+      <name>GitHub moya-app Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/moya-app/moya-jgit-fork</url>
     </repository>
   </distributionManagement>
 
