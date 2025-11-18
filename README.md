@@ -53,6 +53,13 @@ there, but the automated builds use Maven.
     Production of Eclipse features and p2 repository for JGit. See the JGit
     Wiki on why and how to use this module.
 
+Deployment
+-----
+
+To build and deploy to moya-app maven distribution repository, run:
+
+    mvn clean deploy
+
 Tests
 -----
 
